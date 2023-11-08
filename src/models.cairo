@@ -17,6 +17,10 @@ struct Game{
 struct Tile{
     #[key]
     game_id:felt252,
+    #[key]
+    x:u32,
+    #[key]
+    y:u32,
     avator:Avator,
 
 
@@ -26,7 +30,8 @@ struct Tile{
 #[derive(Serde,Drop,Copy,PartialEq,Introspect)]
 enum Avator{
     X:(),
-    O:()
+    O:(),
+    None:()
 }
 
 #[derive(Model, Drop, Serde)]
@@ -46,10 +51,21 @@ impl AvatorPrintTrait of PrintTrait<Avator>{
                 },
                 Avator::O(_)=>{
                     'O player'.print();
+                },
+                Avator::None(_)=>{
+                    'No player'.print();
                 }
             }
         }
 
+}
+impl BoardPrintTrait of PrintTrait<(u32, u32)> {
+    #[inline(always)]
+    fn print(self: (u32, u32)) {
+        let (x, y): (u32, u32) = self;
+        x.print();
+        y.print();
+    }
 }
 // flow here is this/what the models are doing :
 // 1. we get  game Struct: it has the game id and the winnner and addresses:
@@ -57,4 +73,3 @@ impl AvatorPrintTrait of PrintTrait<Avator>{
 // 2.we have a Struct for the tiles... we have a tile
 // 3. Game turn struct 
 // 4.enum for the choice of avators..in this case x and y
-
