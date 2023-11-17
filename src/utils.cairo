@@ -1,7 +1,7 @@
 
 use starknet::ContractAddress;
-use dojo_examples::models::{Game,GameTurn,Avator,Tile};
-fn is_filled(maybe_avator:Avator)->bool{
+use tic_tac_toe::models::{Game,GameTurn,Avator,Tile};
+fn is_filled(avator:Avator)->bool{
     true
 
 }

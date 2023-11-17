@@ -1,6 +1,6 @@
 [package]
 cairo-version = "2.2.0"
-name = "dojo_examples"
+name = "tic_tac_toe"
 version = "0.1.0"
 
 [cairo]
