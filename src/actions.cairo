@@ -1,69 +1,110 @@
 use starknet::ContractAddress;
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 #[starknet::interface]
+
 trait IActions<ContractState>{
-    fn make_move(self:@ContractState,caller:ContractAddress,game_id:felt252);
-    fn start_game(self:@ContractState,player_o_address:ContractAddress,player_x_address:ContractAddress);
+    fn Begin_Game(self:@ContractState,playerX:ContractAddress,playerO:ContractAddress);
+    fn Make_Moves(self:@ContractState,game_id:felt252,current_tile:(u32,u32),player:ContractAddress);
 }
 
 #[starknet::contract]
 mod actions{
-    use dojo::world::{IWorldDispatcher,IWorldDispatcherTrait};
+    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
     use debug::PrintTrait;
-    use starknet::ContractAddress; 
-    use tic_tac_toe::models::{Game,GameTurn,Avator,Tile};
-    use super::IActions;
-    use tic_tac_toe::utils::{is_filled,is_my_turn};
+    use starknet::ContractAddress;
+    use tictactoe::models::{Game,GameBoard,GameState,Avators,Player,PlayersTurn,TrackGameState};
+    use tictactoe::utils::{is_player_turn,is_move_within_board};
+    
 
-    #[storage]
-    struct Storage { 
-        world_dispatcher: IWorldDispatcher,
+     #[storage]
+    struct Storage {
+        world_dispatcher: IWorldDispatcher, 
     }
-        
-    #[external(v0)]
-    impl PlayerActionsImpl of IActions<ContractState>{
-        fn start_game(self:@ContractState,player_o_address:ContractAddress,player_x_address:ContractAddress){
-            let world = self.world_dispatcher.read();
-            // the game_id is got from the hash  of the addresses of player_x and player_o
-            let game_id=pedersen::pedersen(player_o_address.into(),player_x_address.into());
-            set!(
-                world,(
-                    Game{
-                        // set the game_id to the one generated after hashing
-                        game_id:game_id,
-                        winner:Avator::None(()),
-                        playerx:player_x_address,
-                        playero:player_x_address,
-                    },
-                     GameTurn{
-                        game_id:game_id,turn:Avator::X(()),
-                    },
-                )
-            );
-                    // set up an empty grid
-                    set!(world,(Tile{game_id:game_id,x:0,y:0,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:0,y:1,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:0,y:2,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:1,y:0,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:1,y:1,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:1,y:2,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:2,y:0,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:2,y:1,avator:Avator::None}));
-                    set!(world,(Tile{game_id:game_id,x:2,y:2,avator:Avator::None}));
-                   
-            
 
-        }
-        fn make_move(self:@ContractState,caller:ContractAddress,game_id:felt252){
-            let world = self.world_dispatcher.read();
-            // check if it's your turn
-            assert(is_my_turn(caller,game_id),'it is not your turn');
+
+    fn Begin_Game(self:@ContractState,playerX:ContractAddress,playerO:ContractAddress){
         
-            // check if the box is filled/has an Avator
-            let curent_avator = get!(world, (game_id), (Avator));
-            assert(is_filled(curent_avator), 'tile already has an avator');
-            
-        }
+        //set the board -- 3*3 grid
+        let world = self.world_dispatcher.read();
+        let game_id=pedersen::pedersen(playerX.into(), playerO.into());
+        set!(world,(GameBoard{game_id:game_id,x:0,y:0,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:0,y:1,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:0,y:2,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:1,y:0,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:1,y:1,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:1,y:2,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:2,y:0,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:2,y:1,avator:Avators::None}));
+        set!(world,(GameBoard{game_id:game_id,x:2,y:2,avator:Avators::None}));
+
+        //when the game starts the first player should be x and there should be no winner
+
+        set!(world,(PlayersTurn{game_id:game_id,player_turn:Avators::Avator_X(())},
+        Game{
+            game_id:game_id,
+            playerX:playerX,
+            playerO:playerO,
+            winner:Avators::None(()),
+        },
+        TrackGameState{
+            game_id:game_id,
+            game_state:GameState::ongoing(()),
+
+        },
+
         
+        ));
     }
+
+
+
+    //here the player can place either an X or an O
+
+    fn Make_Moves(self:@ContractState,game_id:felt252,current_tile:(u32,u32),player:ContractAddress){
+        
+        let world = self.world_dispatcher.read();
+        let(current_x,current_y )=current_tile;
+        //check game_state
+
+        let track_game_state=get!(world, (game_id),(TrackGameState));
+
+        // Access the game_state field using pattern matching or if statements
+        match track_game_state.game_state {
+            GameState::ongoing => {
+                // Handle the ongoing state
+              'ongoing'.print();
+              //check if it's their player_turn
+
+              let mut turn=get!(world,(game_id),(PlayersTurn));
+              assert(is_player_turn(game_id,player,turn.player_turn),'it is not your turn');
+
+              //check if that box/tile/grid-space is empty
+              let current_move_tile = get!(world,(game_id,current_x,current_y),(GameBoard));
+
+              if current_move_tile.avator==Avators::None(()){
+                assert(is_move_within_board(current_move_tile.avator,(current_x,current_y)),'this move is outside the board');
+              }
+
+
+            },
+            GameState::draw => {
+                // Handle the draw state
+                'draw'.print()
+            },
+            GameState::winner => {
+                // Handle the winner state
+               'winner'.print()
+            }
+        }
+
+       
+        
+
+
+    }
+
+
+
+
 }
+

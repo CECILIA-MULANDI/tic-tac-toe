@@ -1,75 +1,61 @@
 use starknet::ContractAddress;
-use debug::PrintTrait;
-use dojo::database::schema::{SchemaIntrospection, Ty, Enum, serialize_member_type};
-#[derive(Model, Drop, Serde)]
+
+
+//if i call say id (1)...i want to get the players for that game and the address that won
+//what if it was a draw---it will return None
+#[derive(Model,Copy,Drop,Serde,SerdeLen)]
 struct Game{
-     /// game id, computed as follows pedersen_hash(player1_address, player2_address)
     #[key]
     game_id:felt252,
-    winner:Avator,
-    playerx:ContractAddress,
-    playero:ContractAddress,
-
+    playerX:ContractAddress,
+    playerO:ContractAddress,
+    winner:Avators,
 
 }
 
-#[derive(Model, Drop, Serde)]
-struct Tile{
+//the 3*3 grid
+//if i called the id i'd expect the board and the specific tile
+#[derive(Model,Copy,Drop,Serde,SerdeLen)]
+struct GameBoard{
     #[key]
     game_id:felt252,
     #[key]
     x:u32,
     #[key]
     y:u32,
-    avator:Avator,
-
-
+    avator:Avators,
 }
-
-
-#[derive(Serde,Drop,Copy,PartialEq,Introspect)]
-enum Avator{
-    X:(),
-    O:(),
-    None:()
-}
-
-#[derive(Model, Drop, Serde)]
-struct GameTurn {
+#[derive(Model, Copy,Drop, Serde)]
+struct PlayersTurn{
     #[key]
-    game_id: felt252,
-    turn: Avator,
+    game_id:felt252,
+    player_turn:Avators,
+}
+#[derive(Model, Copy,Drop, Serde)]
+struct Player{
+    #[key]
+    player_addres:ContractAddress,
+    isPlayerX:bool,
+    username:felt252,
+}
+//avator for the game...'X' AND 'O'
+#[derive(Serde, Drop, Copy, PartialEq, Introspect)]
+enum Avators{
+    Avator_X:(),
+    Avator_O:(),
+    None:(),
 }
 
-// print traits
-impl AvatorPrintTrait of PrintTrait<Avator>{
-        #[inline(always)]
-        fn print(self:Avator){
-            match self{
-                Avator::X(_)=>{
-                    'X player'.print();
-                },
-                Avator::O(_)=>{
-                    'O player'.print();
-                },
-                Avator::None(_)=>{
-                    'No player'.print();
-                }
-            }
-        }
 
+#[derive(Serde, Drop, Copy, PartialEq, Introspect)]
+enum GameState{
+    ongoing:(),
+    draw:(),
+    winner:(),
 }
-impl BoardPrintTrait of PrintTrait<(u32, u32)> {
-    #[inline(always)]
-    fn print(self: (u32, u32)) {
-        let (x, y): (u32, u32) = self;
-        x.print();
-        y.print();
-    }
+#[derive(Model, Copy,Drop, Serde)]
+struct TrackGameState{
+    #[key]
+    game_id:felt252,
+    game_state:GameState
 }
-// flow here is this/what the models are doing :
-// 1. we get  game Struct: it has the game id and the winnner and addresses:
-// so for every game if I made a query i would get who were the players for that game and who won that game
-// 2.we have a Struct for the tiles... we have a tile
-// 3. Game turn struct 
-// 4.enum for the choice of avators..in this case x and y
