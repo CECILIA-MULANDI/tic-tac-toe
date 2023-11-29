@@ -3,19 +3,20 @@ version = 1
 
 [[package]]
 name = "dojo"
-version = "0.3.2"
-source = "git+https://github.com/dojoengine/dojo?rev=v0.3.2#a0fa1ad96fb98c088be05da6178f43217891c8c6"
+version = "0.3.13"
+source = "git+https://github.com/dojoengine/dojo#09115ef0c6fe82ac34dedc1dfbefb6623df88f60"
 dependencies = [
  "dojo_plugin",
 ]
 
 [[package]]
 name = "dojo_plugin"
-version = "0.3.6"
+version = "0.3.11"
+source = "git+https://github.com/dojoengine/dojo?tag=v0.3.11#1e651b5d4d3b79b14a7d8aa29a92062fcb9e6659"
 
 [[package]]
-name = "tic_tac_toe"
-version = "0.1.0"
+name = "tictactoe"
+version = "0.3.10"
 dependencies = [
  "dojo",
 ]

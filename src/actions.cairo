@@ -79,14 +79,55 @@ mod actions{
               assert(is_player_turn(game_id,player,turn.player_turn),'it is not your turn');
 
               //check if that box/tile/grid-space is empty
-              let current_move_tile = get!(world,(game_id,current_x,current_y),(GameBoard));
+              let mut current_move_tile = get!(world,(game_id,current_x,current_y),(GameBoard));
 
               if current_move_tile.avator==Avators::None(()){
                 assert(is_move_within_board(current_move_tile.avator,(current_x,current_y)),'this move is outside the board');
               }
 
+              //if all conditions==true(thus valid--make a move)
+              set!(world,(current_move_tile));
 
-            },
+              //check if there is a possibility for a winner
+              let mut tile_one=get!(world,(game_id,0,0),(GameBoard));
+              let mut tile_two=get!(world,(game_id,0,1),(GameBoard));
+              let mut tile_three=get!(world,(game_id,0,2),(GameBoard));
+              let mut tile_four=get!(world,(game_id,1,0),(GameBoard));
+              let mut tile_five=get!(world,(game_id,1,1),(GameBoard));
+              let mut tile_six=get!(world,(game_id,1,2),(GameBoard));
+              let mut tile_seven=get!(world,(game_id,2,0),(GameBoard));
+              let mut tile_eight=get!(world,(game_id,2,1),(GameBoard));
+              let mut tile_nine=get!(world,(game_id,2,2),(GameBoard));
+              if tile_one.avator == tile_two.avator && tile_one.avator == tile_three.avator
+        || tile_four.avator == tile_five.avator && tile_four.avator == tile_six.avator
+        || tile_seven.avator == tile_eight.avator && tile_seven.avator == tile_nine.avator
+        || tile_one.avator == tile_four.avator && tile_one.avator == tile_seven.avator
+        || tile_two.avator == tile_five.avator && tile_two.avator == tile_eight.avator
+        || tile_three.avator == tile_six.avator && tile_three.avator == tile_nine.avator
+        || tile_one.avator == tile_five.avator && tile_one.avator == tile_nine.avator
+        || tile_three.avator == tile_five.avator && tile_three.avator == tile_seven.avator
+    {
+        'winner'.print();
+        // Update the game state with the winner
+        // Read the Game struct
+        let mut current_game= get!(world, (game_id), (Game));
+
+        // Update the winner field
+        current_game.winner = turn.player_turn;
+
+    // Update the Game struct in storage
+        set!(world, (current_game));
+        // Update the TrackGameState to winner state
+        set!(
+            world,
+            (TrackGameState {
+                game_id,
+                game_state: GameState::winner(()),
+            })
+        );
+}
+       
+},
             GameState::draw => {
                 // Handle the draw state
                 'draw'.print()
@@ -94,6 +135,7 @@ mod actions{
             GameState::winner => {
                 // Handle the winner state
                'winner'.print()
+               
             }
         }
 
